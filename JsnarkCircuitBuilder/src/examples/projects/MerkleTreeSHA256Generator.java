@@ -1,7 +1,4 @@
-/*******************************************************************************
- * Author: Ahmed Kosba <akosba@cs.umd.edu>
- *******************************************************************************/
-package examples.generators.hash;
+package examples.projects;
 
 import java.math.BigInteger;
 import util.Util;
@@ -9,10 +6,10 @@ import circuit.config.Config;
 import circuit.eval.CircuitEvaluator;
 import circuit.structure.CircuitGenerator;
 import circuit.structure.Wire;
-import examples.gadgets.hash.MerkleTreePathGadget;
-import examples.gadgets.hash.SubsetSumHashGadget;
+import examples.projects.MerkleTreePathGadget;
+import examples.gadgets.hash.SHA256Gadget;
 
-public class MerkleTreeMembershipCircuitGenerator extends CircuitGenerator {
+public class MerkleTreeSHA256Generator extends CircuitGenerator {
 
 	private Wire[] publicRootWires;
 	private Wire[] intermediateHasheWires;
@@ -21,11 +18,10 @@ public class MerkleTreeMembershipCircuitGenerator extends CircuitGenerator {
 	private int leafNumOfWords = 10;
 	private int leafWordBitWidth = 32;
 	private int treeHeight;
-	private int hashDigestDimension = SubsetSumHashGadget.DIMENSION;
-
+	private int hashDigestDimension = 8;
 	private MerkleTreePathGadget merkleTreeGadget;
 	
-	public MerkleTreeMembershipCircuitGenerator(String circuitName, int treeHeight) {
+	public MerkleTreeSHA256Generator(String circuitName, int treeHeight) {
 		super(circuitName);
 		this.treeHeight = treeHeight;
 	}
@@ -63,30 +59,32 @@ public class MerkleTreeMembershipCircuitGenerator extends CircuitGenerator {
 
 	@Override
 	public void generateSampleInput(CircuitEvaluator circuitEvaluator) {
+
+		circuitEvaluator.setWireValue(publicRootWires[0], new BigInteger("3555412827"));
+		circuitEvaluator.setWireValue(publicRootWires[1], new BigInteger("2623498857"));
+		circuitEvaluator.setWireValue(publicRootWires[2], new BigInteger("1009556847"));
+		circuitEvaluator.setWireValue(publicRootWires[3], new BigInteger("3412945572"));
+		circuitEvaluator.setWireValue(publicRootWires[4], new BigInteger("3198149492"));
+		circuitEvaluator.setWireValue(publicRootWires[5], new BigInteger("3422777958"));
+		circuitEvaluator.setWireValue(publicRootWires[6], new BigInteger("2675018006"));
+		circuitEvaluator.setWireValue(publicRootWires[7], new BigInteger("1896274658"));
 		
-		for (int i = 0; i < hashDigestDimension; i++) {
-			circuitEvaluator.setWireValue(publicRootWires[i], Util.nextRandomBigInteger(Config.FIELD_PRIME));
-		}
+		circuitEvaluator.setWireValue(directionSelector, new BigInteger("3"));
+
+		// witness: co-path
+		for(int i=0; i<hashDigestDimension; i++) { circuitEvaluator.setWireValue(intermediateHasheWires[i], new BigInteger("1111111111")); }
+		for(int i=hashDigestDimension; i<hashDigestDimension*2; i++) { circuitEvaluator.setWireValue(intermediateHasheWires[i], new BigInteger("2222222222")); }
 		
-		circuitEvaluator.setWireValue(directionSelector, Util.nextRandomBigInteger(treeHeight));
-		for (int i = 0; i < hashDigestDimension*treeHeight; i++) {
-			circuitEvaluator.setWireValue(intermediateHasheWires[i],  Util.nextRandomBigInteger(Config.FIELD_PRIME));
-		}
-		
-		for(int i = 0; i < leafNumOfWords; i++){
-			circuitEvaluator.setWireValue(leafWires[i], Integer.MAX_VALUE);
-		}
-		
+		for(int i=0; i<leafNumOfWords; i++){ circuitEvaluator.setWireValue(leafWires[i], Integer.MAX_VALUE); }
 	}
-	
 	
 	public static void main(String[] args) throws Exception {
 		
-		MerkleTreeMembershipCircuitGenerator generator = new MerkleTreeMembershipCircuitGenerator("tree_64", 64);
+		MerkleTreeSHA256Generator generator = new MerkleTreeSHA256Generator("tree_2", 2);
 		generator.generateCircuit();
 		generator.evalCircuit();
 		generator.prepFiles();
 		generator.runLibsnark();		
 	}
-	
+
 }
